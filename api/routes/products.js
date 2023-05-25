@@ -7,9 +7,23 @@ const mongoose = require("mongoose");
 mongoose.connect("mongodb+srv://aaa2002:" + process.env.MONGO_ATLAS_PW + "@rest-api-shop.mfayt2v.mongodb.net/?retryWrites=true&w=majority");
 
 router.get('/', (req, res, next) => {
-    res.status(200).json({
-        message: 'Handling GET requests to /products'
-    });
+
+    Product.find()
+        .exec()
+        .then(docs => {
+            console.log(docs);
+            // if (docs.length >= 0) {
+            res.status(200).json(docs);
+            // } else {
+            //     res.status(404).json({message: "no entries"});
+            // }
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
 });
 
 router.post('/', (req, res, next) => {
@@ -39,13 +53,13 @@ router.get('/:productId', (req, res, next) => {
     Product.findById(id)
         .exec()
         .then(doc => {
-        console.log("From database:", doc);
-        if (doc) {
-            res.status(200).json(doc);
-        } else {
-            res.status(404).json({message: 'No valid object found for specified ID.'});
-        }
-    })
+            console.log("From database:", doc);
+            if (doc) {
+                res.status(200).json(doc);
+            } else {
+                res.status(404).json({message: 'No valid object found for specified ID.'});
+            }
+        })
         .catch(err => {
             console.log(err);
             res.status(500).json({error: err});
@@ -54,17 +68,39 @@ router.get('/:productId', (req, res, next) => {
 
 router.patch('/:productId', (req, res, next) => {
 
-    res.status(200).json({
-        message: 'Updated product'
-    });
+    const id = req.params.productId;
+    const updateOps = {...req.body};
+
+    //$set is understood by mongoose
+    Product.updateOne({_id: id}, { $set: updateOps})
+        .exec()
+        .then(result => {
+            console.log(result);
+            res.status(200).json(result);
+        })
+        .catch( err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
 
 });
 
 router.delete('/:productId', (req, res, next) => {
 
-    res.status(200).json({
-        message: 'Deleted product'
-    });
+    const id = req.params.productId;
+    Product.deleteOne({_id: id})
+        .exec()
+        .then(result => {
+            res.status(200).json(result);
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
 
 });
 module.exports = router;
